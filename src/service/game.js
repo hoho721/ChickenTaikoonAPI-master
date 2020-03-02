@@ -9199,6 +9199,65 @@ router.get('/kakao/pass/:session_key', (req, res, next) => {
         });
 });
 
+
+
+
+
+/*
+*    내 인삿말 바꾸기
+* */
+router.post('/guild/set/mymessage/:session_key', (req, res, next) => {
+
+    let session_key = req.params.session_key;
+    let message = req.body.message;
+
+    if (!session_key) {
+        next(new CMError(statusCodes.CODE_ERR_PARAMS, "wrong parameter.", 400));
+        return;
+    }
+
+    let connection;
+    let returnValues = {
+        value: {},
+        code: statusCodes.CODE_ERR_DB,
+        reason: ""
+    };
+
+    pool.getConnection()
+        .then(async conn => {
+            try {
+
+                connection = conn;
+                let user_code = await sessionUtil.getUserCode(conn, session_key);
+
+                //let info = await gameUtil.getguildcheck(conn,user_code);
+                await gameUtil.setguildmyinfo(conn,user_code,message);
+
+                returnValues["value"] = {
+                };
+
+                returnValues["code"] = statusCodes.CODE_SUCCESS;
+                returnValues["reason"] = "success";
+
+
+                res.status(200)
+                    .json(returnValues)
+                    .end();
+
+
+            } catch (err) {
+                errHandler.doHandleError(err, next);
+            } finally {
+                connection.release();
+            }
+
+        })
+        .catch(err => {
+            errHandler.doCatch(connection, err, next);
+        });
+});
+
+
 ///////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 //  게시판
 
